@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Service Portal - Update Status</title>
+</head>
+<body>
+
+<h2>Update Request Status</h2>
+
+<p>ID: <span id="req-id"></span></p>
+<p>Title: <span id="title"></span></p>
+<p>Category: <span id="category"></span></p>
+<p>Description: <span id="description"></span></p>
+<p>Priority: <span id="priority"></span></p>
+<p>Name: <span id="name"></span></p>
+<p>Email: <span id="email"></span></p>
+
+<label for="status-select">Status:</label>
+<select id="status-select">
+    <option value="Open">Open</option>
+    <option value="In Progress">In Progress</option>
+    <option value="Resolved">Resolved</option>
+</select>
+<button onclick="updateStatus()">Update</button>
+
+<script>
+    // Step 1: Get request ID and token from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestId = urlParams.get('id');    
+    const token = urlParams.get('token');     
+
+    // Step 2: Load request details on page load
+    function loadRequest() {
+        fetch(`http://127.0.0.1:8000/requests?token=${token}`)
+        .then(res => res.json())
+        .then(data => {
+            const req = data.find(r => r.id == requestId);
+            if(!req){ alert("Request not found"); return; }
+            document.getElementById("req-id").innerText = req.id;
+            document.getElementById("title").innerText = req.title;
+            document.getElementById("category").innerText = req.category;
+            document.getElementById("description").innerText = req.description;
+            document.getElementById("priority").innerText = req.priority;
+            document.getElementById("name").innerText = req.name;
+            document.getElementById("email").innerText = req.email;
+            document.getElementById("status-select").value = req.status;
+        })
+        .catch(err => alert("Failed to load request"));
+    }
+
+    // Step 3: Update status
+function updateStatus() {
+    const newStatus = document.getElementById("status-select").value;
+
+    fetch(`http://127.0.0.1:8000/requests/${requestId}/status?token=${token}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data && data.status){
+            alert("Status updated to " + newStatus);
+            localStorage.setItem("token","admin");
+            // Redirect to dashboard with token so user stays logged in
+            window.location.href = "index.html";
+        } else {
+            alert("Failed to update status");
+            window.location.reload();
+        }
+    })
+    .catch(err => alert("Error updating status: " + err));
+}
+
+    // Load request automatically when page opens
+    loadRequest();
+</script>
+
+</body>
+</html>
